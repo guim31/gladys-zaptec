@@ -216,7 +216,8 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **Image de base** : `FROM public.ecr.aws/docker/library/node:…` (miroir officiel ECR Public, même
   empreinte) et non `node:…` de Docker Hub, qui refuse en 429 les pulls anonymes des runners GitHub
   dès qu'il y a plusieurs builds à la fois. Un échec 429 dans le job « Docker build » n'est pas un bug
-  du code. Même parade dans `.github/workflows/build.yml` (posée par l'orchestrateur, ne pas la
+  du code. ECR Public peut aussi répondre 429 (« toomanyrequests: Data limit exceeded », vu le
+  16/10/2026 sur gladys-zaptec) : relancer le job une fois. Même parade dans `.github/workflows/build.yml` (posée par l'orchestrateur, ne pas la
   retirer) : QEMU et BuildKit tirés de `mirror.gcr.io`.
 - La règle `data/` du `.gitignore` du template (pour le volume `/data`) exclut aussi `src/data/` :
   l'ancrer en `/data/`, dans `.prettierignore` aussi.
