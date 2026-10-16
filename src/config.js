@@ -1,45 +1,54 @@
 // -----------------------------------------------------------------------------
 // Integration configuration.
 //
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// Filled in by the user in Gladys from the manifest `config_schema`. The SDK
+// fetches it (`gladys.getConfig()`) and pushes every change
+// (`gladys.onConfigUpdated()`); this module only provides the defaults and
+// normalizes the received object, so the rest of the code never deals with
+// `undefined` or with numbers typed as strings.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+/** The languages of the Gladys interface, in the order every text carries them. */
+export const LANGUAGES = ['en', 'fr', 'de', 'es'];
+
+/**
+ * Refresh intervals offered in the configuration, in seconds (select values).
+ * One to five minutes: Zaptec asks API users not to poll aggressively (its
+ * fair use policy), and the Home Assistant integration had to slow down too.
+ */
+export const POLL_INTERVALS = ['60', '120', '300'];
+
+// MUST stay equal to the `default` values of the manifest config_schema
+// (test/manifest.test.js checks it).
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  username: '', // login of the Zaptec Portal / Zaptec app account (an e-mail address)
+  password: '',
+  language: 'fr', // language of the feature names and of the texts built here
+  poll_interval: '120', // seconds between two readings of the Zaptec cloud
 };
 
 /**
  * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ * @param {Record<string, unknown>} [raw] config returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
+  const source = raw ?? {};
+  const language = String(source.language ?? DEFAULT_CONFIG.language);
+  const interval = String(source.poll_interval ?? DEFAULT_CONFIG.poll_interval);
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    username: String(source.username ?? DEFAULT_CONFIG.username).trim(),
+    password: String(source.password ?? DEFAULT_CONFIG.password),
+    language: LANGUAGES.includes(language) ? language : DEFAULT_CONFIG.language,
+    poll_interval: POLL_INTERVALS.includes(interval) ? interval : DEFAULT_CONFIG.poll_interval,
   };
+}
+
+/** The account can only be reached once both fields are filled in. */
+export function isConfigured(config) {
+  return Boolean(config.username && config.password);
+}
+
+/** Period of the container's own refresh timer, in milliseconds. */
+export function pollPeriodMs(config) {
+  return Number(config.poll_interval) * 1000;
 }

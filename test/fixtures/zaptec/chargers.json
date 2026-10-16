@@ -1,0 +1,43 @@
+{
+  "Pages": 1,
+  "Data": [
+    {
+      "OperatingMode": 3,
+      "IsOnline": true,
+      "Id": "00000000-0000-4000-8000-0000000a0101",
+      "MID": "ZAP000101",
+      "DeviceId": "ZAP000101",
+      "SerialNo": "ZAP000101",
+      "Name": "Garage",
+      "CreatedOnDate": "2024-03-02T09:14:51.103",
+      "CircuitId": "00000000-0000-4000-8000-00000000c001",
+      "Active": true,
+      "CurrentUserRoles": 3,
+      "Pin": "0000",
+      "DeviceType": 4,
+      "InstallationName": "Maison",
+      "InstallationId": "00000000-0000-4000-8000-00000000aaaa",
+      "AuthenticationType": 0,
+      "IsAuthorizationRequired": false
+    },
+    {
+      "OperatingMode": 1,
+      "IsOnline": true,
+      "Id": "00000000-0000-4000-8000-0000000b0202",
+      "MID": "ZPR000202",
+      "DeviceId": "ZPR000202",
+      "SerialNo": "ZPR000202",
+      "Name": "Parking",
+      "CreatedOnDate": "2023-11-20T15:02:07.481",
+      "CircuitId": "00000000-0000-4000-8000-00000000c002",
+      "Active": true,
+      "CurrentUserRoles": 1,
+      "Pin": "0000",
+      "DeviceType": 1,
+      "InstallationName": "Copropriété",
+      "InstallationId": "00000000-0000-4000-8000-00000000bbbb",
+      "AuthenticationType": 0,
+      "IsAuthorizationRequired": true
+    }
+  ]
+}

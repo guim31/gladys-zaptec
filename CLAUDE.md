@@ -31,16 +31,20 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only: creates the Gladys client, the token store, the app
+src/app.js                        the integration: account, discovery, refresh timer, commands,
+                                  scene triggers and action, widget (registered before connect())
+src/devices.js                    the Gladys devices (charger, installation) and their states
+src/zaptec/client.js              Zaptec cloud API client (OAuth2 password grant, typed errors)
+src/zaptec/model.js               pure translation of the Zaptec observations into Gladys values
+src/i18n.js                       every text, in en / fr / de / es
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js                      the token file in /data
+src/issues.js                     repeated failures logged once, recovery once
+scripts/probe.mjs                 read-only probe of the real API (no secret printed)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+docs/en.md, fr.md, de.md, es.md   user documentation, re-hosted by Gladys (same sections)
+test/                             node --test, against the SDK's fake Gladys and a fake Zaptec cloud
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -62,7 +66,7 @@ test/                             node --test, against the SDK's fake Gladys (in
   in `CHANGELOG.md` (`### Added`, `Changed`, `Fixed`, `Removed`, `Security`).
   Never write a version heading: the Release workflow moves the section, and it
   becomes the notes of the GitHub Release.
-- **Manifest.** Texts are multi-language objects `{ "en": ..., "fr": ... }`:
+- **Manifest.** Texts are multi-language objects `{ "en", "fr", "de", "es" }`:
   `label`, `description` and `placeholder` alike, never a plain string. The
   catalog `description` holds 10 to 100 characters per language. A field the
   older cores do not know needs a higher `gladys_version` minimum
@@ -70,8 +74,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in four languages (English, French, German,
+  Spanish): action messages, manifest texts, feature names, widget content, and
+  `docs/en.md`, `fr.md`, `de.md`, `es.md`, kept in sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -211,7 +216,8 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **Image de base** : `FROM public.ecr.aws/docker/library/node:…` (miroir officiel ECR Public, même
   empreinte) et non `node:…` de Docker Hub, qui refuse en 429 les pulls anonymes des runners GitHub
   dès qu'il y a plusieurs builds à la fois. Un échec 429 dans le job « Docker build » n'est pas un bug
-  du code. Même parade dans `.github/workflows/build.yml` (posée par l'orchestrateur, ne pas la
+  du code. ECR Public peut aussi répondre 429 (« toomanyrequests: Data limit exceeded », vu le
+  16/10/2026 sur gladys-zaptec) : relancer le job une fois. Même parade dans `.github/workflows/build.yml` (posée par l'orchestrateur, ne pas la
   retirer) : QEMU et BuildKit tirés de `mirror.gcr.io`.
 - La règle `data/` du `.gitignore` du template (pour le volume `/data`) exclut aussi `src/data/` :
   l'ancrer en `/data/`, dans `.prettierignore` aussi.
@@ -233,3 +239,49 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Intégration Zaptec (ce dépôt)
+
+**API.** Cloud officiel `https://api.zaptec.com`, celle du Zaptec Portal et de l'intégration HACS
+`custom-components/zaptec` (MIT). Connexion OAuth2 « password grant » : `POST /oauth/token`
+(formulaire `grant_type=password&username&password`) → `access_token` (~24 h, `expires_in`), **sans
+jeton de rafraîchissement** : à l'expiration, nouvelle connexion. Refus : HTTP 400 `invalid_grant`.
+Lecture : `GET /api/chargers` (`{ Pages, Data }`), `GET /api/chargers/{id}/state` (liste
+d'observations `{ StateId, ValueAsString }`), `GET /api/installation/{id}`. Commandes :
+`POST /api/chargers/{id}/sendCommand/{506|507|10001}`, `POST /api/installation/{id}/update`
+(`availableCurrent`). Constantes publiques sans connexion : `GET /api/constants`.
+
+**Pièges et choix.**
+
+- **Session sans réseau vers Zaptec** : `api.zaptec.com` et `docs.zaptec.com` sont refusés par le
+  proxy. Les fixtures sont **reconstruites** (`test/fixtures/zaptec/README.md`) ; `scripts/probe.mjs`
+  vérifie d'abord les numéros d'observation, de mode et de commande contre `GET /api/constants`, puis
+  la connexion refusée d'un faux compte. evcc se lit mais ne se recopie pas (module Zaptec « NOT
+  covered by the MIT license ») : seuls les numéros de l'API en ont été repris.
+- **Politique d'usage raisonnable de Zaptec** : 10 requêtes/s par compte, pas d'interrogation
+  agressive, et **interdiction des points d'accès non documentés**. D'où : pas d'« autoriser la
+  charge » (`POST chargers/{id}/authorizecharge`, interne, que HACS utilise quand même), pas de
+  `localSettings` (verrouillage du câble, luminosité). Relevé 1 à 5 min (2 par défaut),
+  installation toutes les 10 min, pause `Retry-After` (5 min par défaut) sur 429.
+- **Commandes validées par Zaptec** : 506 (StopChargingFinal = pause) seulement en charge
+  (mode 3), 507 (ResumeCharging) seulement en mode 5 avec `FinalStopActive` (718) à 1 ; sinon
+  Zaptec répond 400. Le conteneur vérifie avant d'envoyer pour donner un message lisible. **10001
+  (DeauthorizeAndStop) répond 500 alors qu'il est exécuté** (relevé par HACS) : un 500 sur 10001 est
+  accepté, le relevé suivant tranche.
+- **Modes** (observation 710) : 0 inconnu, 1 déconnecté, 2 véhicule branché en attente, 3 en
+  charge, 5 terminé. Mode 5 + 718 = 1 : pause par commande ; mode 5 + 718 = 0 : le véhicule a fini
+  (batterie pleine, sa programmation), **Zaptec ne peut pas le reprendre**. « Charge terminée » ne se
+  déclenche que dans ce second cas. Pas de mode erreur exposé.
+- **En ligne** : observation -2 (IsOnline) ; à défaut, `IsOnline` de la liste des bornes. Pas de
+  fonctionnalité « en ligne » dédiée (pas de couple adapté dans la table) : connecteur
+  « indisponible », statut « Hors ligne » et badge de transport `unreachable`.
+- **Énergie totale** : OCMF signé (554, `OCMF|{json}|{signature}`, max des `RD[].RV`), envoyé par la
+  borne environ une fois par heure, et celui de la dernière session (723, JSON `SignedSession`) ; on
+  prend le plus grand, et l'index n'est publié que s'il ne baisse pas. Énergie de session (553) en
+  `electrical-vehicle-charge/last-charge-energy-added`, jamais en `energy-sensor/energy`.
+- **Installation** : `GET /api/installation/{id}` répond 403, ou **204 vide depuis 2025**, à un
+  simple utilisateur : pas d'appareil installation alors. Écrire le courant exige propriétaire ou
+  service, Zaptec Sense et le mode autonome désactivés. Zaptec recommande de ne pas changer le
+  courant plus d'une fois toutes les 15 min (documenté, pas imposé).
+- **Pas de Service Bus** (temps réel Azure, `messagingConnectionDetails` déprécié) : client lourd,
+  impossible à éprouver sans compte. Candidat pour une version suivante.
