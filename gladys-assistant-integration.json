@@ -1,177 +1,405 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Zaptec",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Zaptec EV chargers in Gladys: status, power, energy, charge control.",
+    "fr": "Bornes de recharge Zaptec dans Gladys : état, puissance, énergie, pilotage de la charge.",
+    "de": "Zaptec-Ladestationen in Gladys: Status, Leistung, Energie, Steuerung der Ladung.",
+    "es": "Cargadores Zaptec en Gladys: estado, potencia, energía y control de la carga."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-zaptec:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-zaptec/main/cover.png",
+  "categories": ["energy"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Zaptec account",
+        "fr": "Compte Zaptec",
+        "de": "Zaptec-Konto",
+        "es": "Cuenta Zaptec"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Use the account of the Zaptec app or Zaptec Portal. Gladys reads your chargers through the official Zaptec cloud API. Not affiliated with Zaptec.",
+        "fr": "Utilisez le compte de l'appli Zaptec ou du Zaptec Portal. Gladys lit vos bornes via l'API cloud officielle de Zaptec. Sans lien avec Zaptec.",
+        "de": "Verwende das Konto der Zaptec-App oder des Zaptec Portals. Gladys liest deine Ladestationen über die offizielle Cloud-API von Zaptec. Nicht mit Zaptec verbunden.",
+        "es": "Utilice la cuenta de la aplicación Zaptec o del Zaptec Portal. Gladys lee sus cargadores a través de la API en la nube oficial de Zaptec. Sin relación con Zaptec."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://portal.zaptec.com",
+          "label": {
+            "en": "Zaptec Portal",
+            "fr": "Zaptec Portal",
+            "de": "Zaptec Portal",
+            "es": "Zaptec Portal"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "E-mail address",
+        "fr": "Adresse e-mail",
+        "de": "E-Mail-Adresse",
+        "es": "Correo electrónico"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "The login of the Zaptec app and Zaptec Portal.",
+        "fr": "L'identifiant de l'appli Zaptec et du Zaptec Portal.",
+        "de": "Die Anmeldung der Zaptec-App und des Zaptec Portals.",
+        "es": "El usuario de la aplicación Zaptec y del Zaptec Portal."
+      },
+      "placeholder": {
+        "en": "e.g. name@example.com",
+        "fr": "ex. nom@example.com",
+        "de": "z. B. name@example.com",
+        "es": "p. ej. nombre@example.com"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "required": true
     },
     {
-      "key": "unit",
+      "key": "language",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Language of the device texts",
+        "fr": "Langue des textes des appareils",
+        "de": "Sprache der Gerätetexte",
+        "es": "Idioma de los textos"
+      },
+      "description": {
+        "en": "Names of the features (set when a device is added) and detailed status of the chargers.",
+        "fr": "Noms des fonctionnalités (fixés à l'ajout d'un appareil) et statut détaillé des bornes.",
+        "de": "Namen der Funktionen (beim Hinzufügen eines Geräts festgelegt) und detaillierter Status der Ladestationen.",
+        "es": "Nombres de las funciones (fijados al añadir un dispositivo) y estado detallado de los cargadores."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "fr",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "How often the Zaptec cloud is read. Zaptec asks for a fair use of its API: one to five minutes.",
+        "fr": "Fréquence de lecture du cloud Zaptec. Zaptec demande un usage raisonnable de son API : une à cinq minutes.",
+        "de": "Wie oft die Zaptec-Cloud gelesen wird. Zaptec verlangt eine faire Nutzung seiner API: eine bis fünf Minuten.",
+        "es": "Frecuencia de lectura de la nube Zaptec. Zaptec pide un uso razonable de su API: de uno a cinco minutos."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "120",
+      "options": [
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "vehicle_connected",
+      "label": {
+        "en": "Vehicle plugged in",
+        "fr": "Véhicule branché",
+        "de": "Fahrzeug angesteckt",
+        "es": "Vehículo conectado"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A vehicle was plugged into a Zaptec charger that had none (seen within one refresh interval).",
+        "fr": "Un véhicule a été branché sur une borne Zaptec qui n'en avait pas (vu en un intervalle de rafraîchissement).",
+        "de": "Ein Fahrzeug wurde an eine freie Zaptec-Ladestation angesteckt (innerhalb eines Aktualisierungsintervalls erkannt).",
+        "es": "Se ha conectado un vehículo a un cargador Zaptec que no tenía ninguno (detectado en un intervalo de actualización)."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "charger",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "label": {
+            "en": "Charger",
+            "fr": "Borne",
+            "de": "Ladestation",
+            "es": "Cargador"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "charger_name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Charger name",
+            "fr": "Nom de la borne",
+            "de": "Name der Ladestation",
+            "es": "Nombre del cargador"
+          }
+        }
+      ]
+    },
+    {
+      "key": "charging_completed",
+      "label": {
+        "en": "Charging completed",
+        "fr": "Charge terminée",
+        "de": "Laden abgeschlossen",
+        "es": "Carga terminada"
+      },
+      "description": {
+        "en": "The vehicle stopped taking current by itself (full battery or its own limit), cable still plugged in.",
+        "fr": "Le véhicule a cessé de lui-même de prendre du courant (batterie pleine ou sa propre limite), câble toujours branché.",
+        "de": "Das Fahrzeug nimmt von selbst keinen Strom mehr auf (Akku voll oder eigene Grenze), das Kabel steckt noch.",
+        "es": "El vehículo ha dejado de tomar corriente por sí mismo (batería llena o su propio límite), con el cable aún conectado."
+      },
+      "fields": [
+        {
+          "key": "charger",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Charger",
+            "fr": "Borne",
+            "de": "Ladestation",
+            "es": "Cargador"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "charger_name",
+          "type": "string",
+          "label": {
+            "en": "Charger name",
+            "fr": "Nom de la borne",
+            "de": "Name der Ladestation",
+            "es": "Nombre del cargador"
+          }
+        },
+        {
+          "key": "session_energy",
+          "type": "number",
+          "label": {
+            "en": "Session energy (kWh)",
+            "fr": "Énergie de la session (kWh)",
+            "de": "Energie der Ladung (kWh)",
+            "es": "Energía de la sesión (kWh)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "charger_command",
+      "label": {
+        "en": "Control a Zaptec charge",
+        "fr": "Piloter une charge Zaptec",
+        "de": "Zaptec-Ladung steuern",
+        "es": "Controlar una carga Zaptec"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Pauses or resumes the charge of a vehicle plugged into a Zaptec charger, or ends the session.",
+        "fr": "Met en pause ou reprend la charge d'un véhicule branché sur une borne Zaptec, ou termine la session.",
+        "de": "Pausiert oder setzt die Ladung eines an eine Zaptec-Ladestation angesteckten Fahrzeugs fort, oder beendet die Sitzung.",
+        "es": "Pausa o reanuda la carga de un vehículo conectado a un cargador Zaptec, o finaliza la sesión."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Charger",
+            "fr": "Borne",
+            "de": "Ladestation",
+            "es": "Cargador"
+          },
           "required": true
+        },
+        {
+          "key": "command",
+          "type": "select",
+          "label": {
+            "en": "Command",
+            "fr": "Commande",
+            "de": "Befehl",
+            "es": "Orden"
+          },
+          "required": true,
+          "default": "pause",
+          "options": [
+            {
+              "value": "pause",
+              "label": {
+                "en": "Pause",
+                "fr": "Mettre en pause",
+                "de": "Pausieren",
+                "es": "Pausar"
+              }
+            },
+            {
+              "value": "resume",
+              "label": {
+                "en": "Resume",
+                "fr": "Reprendre",
+                "de": "Fortsetzen",
+                "es": "Reanudar"
+              }
+            },
+            {
+              "value": "stop",
+              "label": {
+                "en": "End the session",
+                "fr": "Terminer la session",
+                "de": "Sitzung beenden",
+                "es": "Finalizar la sesión"
+              }
+            }
+          ]
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "command",
+          "type": "string",
+          "label": {
+            "en": "Zaptec command sent",
+            "fr": "Commande Zaptec envoyée",
+            "de": "Gesendeter Zaptec-Befehl",
+            "es": "Orden Zaptec enviada"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "charger",
+      "label": {
+        "en": "Zaptec charger",
+        "fr": "Borne Zaptec",
+        "de": "Zaptec-Ladestation",
+        "es": "Cargador Zaptec"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Status, power and session energy of a charger, with pause, resume and end of session.",
+        "fr": "État, puissance et énergie de la session, avec pause, reprise et fin de session.",
+        "de": "Status, Leistung und Energie der Ladung, mit Pause, Fortsetzen und Sitzungsende.",
+        "es": "Estado, potencia y energía de la sesión, con pausa, reanudación y fin de sesión."
+      },
+      "icon": "battery-charging",
+      "action_timeout_seconds": 30,
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Charger",
+            "fr": "Borne",
+            "de": "Ladestation",
+            "es": "Cargador"
+          },
+          "required": true
+        }
+      ]
     }
   ]
 }
