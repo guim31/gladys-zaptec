@@ -1,6 +1,6 @@
 {
   "name": "gladys-zaptec",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Gladys Assistant external integration for Zaptec EV chargers (official Zaptec cloud API).",
   "type": "module",
